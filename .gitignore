@@ -1,4 +1,6 @@
 .idea
-*.pyc
+*.py[cod]
 *.log
 venv/
+
+config.ini
