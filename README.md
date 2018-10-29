@@ -1,10 +1,10 @@
-# Snips Zibase TTS action
+# Snips Zibase Thermostat TTS action
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/snipsco/snips-skill-owm/master/LICENSE.txt)
 
 ### SAM (preferred)
 To install the action on your device, you can use [Sam](https://snips.gitbook.io/getting-started/installation)
 
-`sam install action -g https://github.com/onlinux/snips-zibase.git`
+`sam install action -g https://github.com/onlinux/snips-thermostat-zibase.git`
 
 ### Manually
 
@@ -16,7 +16,7 @@ You'll need `snips-skill-server` installed on the pi
 Stop snips-skill-server & generate the virtual environment
 ```
 sudo systemctl stop snips-skill-server
-cd /var/lib/snips/skills/snips-zibase/
+cd /var/lib/snips/skills/snips-thermostat-zibase/
 sh setup.sh
 sudo systemctl start snips-skill-server
 ```
