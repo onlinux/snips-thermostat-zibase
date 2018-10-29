@@ -1,6 +1,8 @@
 # Snips Zibase Thermostat TTS action
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/snipsco/snips-skill-owm/master/LICENSE.txt)
 
+<img class="wp-image-461 size-full" src="/images/thermostat_variables.png" alt=" Zibase Thermostat Variables" />
+
 ### SAM (preferred)
 To install the action on your device, you can use [Sam](https://snips.gitbook.io/getting-started/installation)
 
