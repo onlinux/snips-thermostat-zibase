@@ -12,19 +12,22 @@
 #                                                                                 
 #
 # Import required Python libraries
-import settings
+
+# Fixing utf-8 issues when sending Snips intents in French with accents
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+sys.path.append('..')
+
 from thermostat import Thermostat
 import time
 from hermes_python.hermes import Hermes
 import requests
 from snipshelpers.config_parser import SnipsConfigParser
 
-# Fixing utf-8 issues when sending Snips intents in French with accents
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
-CONFIG_INI =  "config.ini"
+
+CONFIG_INI =  "../config.ini"
 MQTT_IP_ADDR = "localhost"
 MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
@@ -40,6 +43,8 @@ with Hermes(MQTT_ADDR) as h:
 
     try:
         config = SnipsConfigParser.read_configuration_file(CONFIG_INI)
+        
+
     except :
         config = None
         
@@ -55,15 +60,17 @@ with Hermes(MQTT_ADDR) as h:
                 ip = None 
                 
         print("Address ip zibase:{}").format(ip)
+        for x, y in config.items():
+            print(x, y)
             
     if ip is not None:
 	try:
 	    thermostat = Thermostat(ip)
-	    thermostat.setSetpointDay(203)
+	    thermostat.setSetpointDay(207)
 	    thermostat.setSetpointNight(195)
 	    thermostat.addSetpointDay(1)
 	    thermostat.addSetpointNight(5)
-	    thermostat.setMode(16)
+	    thermostat.setMode(0)
 	    thermostat.update()
 	    
 	    thermostat.read()
