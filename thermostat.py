@@ -4,12 +4,6 @@
 # Author: Eric Vandecasteele (c)2014
 # http://blog.onlinux.fr
 #
-#   __     _                             _                    _            _
-#  /__\ __(_) ___  /\   /\__ _ _ __   __| | ___  ___ __ _ ___| |_ ___  ___| | ___
-# /_\| '__| |/ __| \ \ / / _` | '_ \ / _` |/ _ \/ __/ _` / __| __/ _ \/ _ \ |/ _ \
-# //__| |  | | (__   \ V / (_| | | | | (_| |  __/ (_| (_| \__ \ ||  __/  __/ |  __/
-# \__/|_|  |_|\___|   \_/ \__,_|_| |_|\__,_|\___|\___\__,_|___/\__\___|\___|_|\___|
-#
 #
 # Import required Python libraries
 
@@ -44,20 +38,22 @@ class Thermostat:
     }
 
     def __init__(self, ip,
-                 tempVariableId=28,
-                 setpointDayVariableId=29,
-                 setpointNightVariableId=30,
-                 modeVariableId=31,
-                 stateVariableId=13,
-                 thermostatScenarioId=32):
+                 tempvariableid=28,
+                 setpointdayvariableid=29,
+                 setpointnightvariableid=30,
+                 modevariableid=31,
+                 statevariableid=13,
+                 thermostatscenarioid=32,
+                 thermostatprobeid=14):
         """ Indiquer l'adresse IP de la ZiBase """
         self.ip = ip
-        self.tempVariableId = tempVariableId
-        self.setpointDayVariableId = setpointDayVariableId
-        self.setpointNightVariableId = setpointNightVariableId
-        self.modeVariableId = modeVariableId
-        self.stateVariableId = stateVariableId
-        self.thermostatScenarioId = thermostatScenarioId
+        self.tempVariableId = tempvariableid
+        self.setpointDayVariableId = setpointdayvariableid
+        self.setpointNightVariableId = setpointnightvariableid
+        self.modeVariableId = modevariableid
+        self.stateVariableId = statevariableid
+        self.thermostatScenarioId = thermostatscenarioid
+        self.thermostatProbeId = thermostatprobeid
         self.modeList = [0, 5, 6, 16, 32, 48, 64]
         self.state = None
         self.indoorTemp = None
@@ -111,6 +107,14 @@ class Thermostat:
         self.setpointNightValue = self.getSetpointNight()
         self.modeValue = self.getMode()
 
+        probe = zibase.getSensorInfo('TT', str(self.thermostatProbeId))
+        if probe:
+            self.runningMode = int(probe[2]) & 0x1
+        else:
+            logging.error(' Could not find any Thermostat with id TT {}'.format(
+                self.thermostatProbeId))
+            return
+
         v = zibase.getVariable(self.stateVariableId)
         if v >= 0:
             self.state = v & 0x01
@@ -118,8 +122,10 @@ class Thermostat:
             self.state = 0
 
         elapsed = (time.time() - start) * 1000
-        logging.debug(' indoorTemp [%d] setpointDay [%d] setpointNight [%d] mode [%d] [%s] state [%d] [%s]' % (
-            self.indoorTemp, self.setpointDayValue, self.setpointNightValue, self.modeValue, Thermostat.mode[self.modeValue], self.state, Thermostat.state[self.state]))
+        logging.debug(' indoorTemp [%d] setpointDay [%d] setpointNight [%d] mode [%d] [%s] state [%d] [%s] running mode [%d]' % (
+            self.indoorTemp, self.setpointDayValue, self.setpointNightValue,
+            self.modeValue, Thermostat.mode[self.modeValue], self.state,
+            Thermostat.state[self.state], self.runningMode))
         logging.debug(' retrieve data from %s in [%d ms]' % (self.ip, elapsed))
 
     def setVariable(self, variable, value):
@@ -146,11 +152,26 @@ class Thermostat:
                 ' Send mode %i  to %s . Error: invalid mode' %
                 (int(mode), self.ip))
 
+    def getStateString(self):
+        return Thermostat.state[self.state]
+
+    def getState(self):
+        return self.state
+
     def getMode(self):
         return self.zibase.getVariable(self.modeVariableId)
 
     def getModeString(self):
         return Thermostat.mode[self.getMode()]
+
+    def getRunningMode(self):
+        return (self.runningMode)
+
+    def getRunningModeString(self):
+        if self.runningMode is not None:
+            return Thermostat.runMode[self.runningMode]
+        else:
+            return None
 
     def setSetpointDay(self, value):
         value = int(value)
@@ -180,10 +201,12 @@ class Thermostat:
     def addSetpointDay(self, incr=1):
         self.setpointDayValue += incr
         self.setSetpointDay(self.setpointDayValue)
+        self.update()
 
     def addSetpointNight(self, incr=1):
         self.setpointNightValue += incr
         self.setSetpointNight(self.setpointNightValue)
+        self.update()
 
     def update(self):
         self.zibase.runScenario(self.thermostatScenarioId)

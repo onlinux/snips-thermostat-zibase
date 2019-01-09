@@ -23,6 +23,9 @@ MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 
 THERMOSTAT = 'ericvde31830:thermostat'
+THERMOSTATSET = 'ericvde31830:thermostatSet'
+THERMOSTATSHIFT = 'ericvde31830:thermostatShift'
+THERMOSTATTURNOFF = 'ericvde312830:thermostatTurnOff'
 
 
 def open_thermostat(config):
@@ -33,28 +36,32 @@ def open_thermostat(config):
     tempVariableId = int(
         config.get(
             'global', {
-                "tempVariable": "28"}).get(
-            'tempVariable', '28'))
+                "tempvariable": "28"}).get(
+            'tempvariable', '28'))
     setpointDayVariableId = config.get(
         'global', {
-            "setpointDayVariable": "29"}).get(
-        'setpointDayVariable', '29')
+            "setpointdayvariable": "29"}).get(
+        'setpointdayvariable', '29')
     setpointNightVariableId = config.get(
         'global', {
-            "setpointNightVariable": "29"}).get(
-        'setpointNightVariable', '30')
+            "setpointnightvariable": "29"}).get(
+        'setpointnightvariable', '30')
     modeVariableId = config.get(
         'global', {
-            "modeVariable": "29"}).get(
-        'modeVariable', '31')
+            "modevariable": "29"}).get(
+        'modevariable', '31')
     stateVariableId = config.get(
         'global', {
-            "stateVariable": "13"}).get(
-        'stateVariable', '13')
+            "statevariable": "13"}).get(
+        'statevariable', '13')
     thermostatScenarioId = config.get(
         'global', {
-            "thermostatScenario": "32"}).get(
-        'thermostatScenario', '32')
+            "thermostatscenario": "32"}).get(
+        'thermostatscenario', '32')
+    thermostatProbeId = config.get(
+        'global', {
+            "thermostatprobeid": "13"}).get(
+        'thermostatprobeid', '13')
 
     thermostat = Thermostat(
         ip,
@@ -63,19 +70,104 @@ def open_thermostat(config):
         int(setpointNightVariableId),
         int(modeVariableId),
         int(stateVariableId),
-        int(thermostatScenarioId))
+        int(thermostatScenarioId),
+        int(thermostatProbeId))
 
     print(" Address ip zibase:{}").format(ip)
-    print("Indoor Temperature:{}").format(
+    print(" Indoor Temperature:{}").format(
         thermostat.tempStr(thermostat.getTemp() / 10.0))
-
+    print (" Thermostat Mode:{}").format(thermostat.getModeString())
+    print (" Thermostat State:{}").format(thermostat.getStateString())
+    print (" Thermostat running Mode:{}").format(
+        thermostat.getRunningModeString())
     return thermostat
 
 
 def intent_received(hermes, intent_message):
     intentName = intent_message.intent.intent_name
     sentence = 'Voilà c\'est fait.'
-    print(intentName, sentence)
+    print thermostat.getModeString()
+
+    for (slot_value, slot) in intent_message.slots.items():
+        print('Slot {} -> \n\tRaw: {} \tValue: {}'
+              .format(slot_value, slot[0].raw_value, slot[0].slot_value.value.value))
+
+    if intentName == THERMOSTATSET:
+        if intent_message.slots.temperature:
+            temperature = intent_message.slots.temperature.first().value
+            print "Température reconnue:", temperature
+            runningMode = thermostat.getRunningModeString()
+            runMode = thermostat.getModeString()
+
+            if runningMode == 'nuit':
+                thermostat.setSetpointNight(int(temperature) * 10)
+
+            elif runningMode == 'jour':
+                thermostat.setSetpointday(int(temperature) * 10)
+
+            thermostat.update()
+            sentence = "Ok, je passe la consigne de {} à {} degrés".format(
+                runningMode, str(temperature))
+            hermes.publish_end_session(intent_message.session_id, sentence)
+            return
+
+    if intentName == THERMOSTATSHIFT:
+        if intent_message.slots.up_down:
+            up_down = intent_message.slots.up_down.first().value
+            action = up_down.encode('utf-8')
+            print "intent_message.slots.up_down.first()", action
+
+            if action is not None:
+
+                setPoint = None
+                runningMode = thermostat.getRunningModeString()
+                runMode = thermostat.getModeString()
+
+                if runMode == 'stop' or runMode == 'hors gel':
+                    sentence = "Désolée mais nous sommes en mode {}. Je ne fais rien dans ce cas.".format(
+                        runMode)
+                elif action == 'down':
+                    if runningMode == 'jour' or "jour" in thermostat.getModeString():
+                        thermostat.addSetpointDay(-1)
+                        setPoint = str(thermostat.getSetpointDay()
+                                       / 10.0).replace('.', ',')
+                        sentence = "Nous sommes en mode {}, je descends donc la consigne de jour à {} degrés.".format(
+                            runMode, setPoint)
+                    else:
+                        thermostat.addSetpointNight(-1)
+                        setPoint = str(thermostat.getSetpointNight()
+                                       / 10.0).replace('.', ',')
+                        sentence = "Nous sommes en mode {}, je descends donc la consigne de nuit à {} degrés.".format(
+                            runMode, setPoint)
+
+                elif action == "up":
+                    if runningMode == 'jour' or "jour" in runMode:
+                        thermostat.addSetpointDay(1)
+                        setPoint = str(thermostat.getSetpointDay()
+                                       / 10.0).replace('.', ',')
+                        sentence = "Nous sommes en mode {}, je monte la consigne de jour à {} degrés.".format(
+                            runMode, setPoint)
+                    else:
+                        # switch to mode tempo-jour
+                        if runningMode == 'nuit' and runMode == 'automatique':
+                            sentence = "Nous sommes en mode {} économique, je passe donc en mode tempo jour".format(
+                                runMode)
+                        else:
+                            sentence = "Nous sommes en mode {}, je passe donc en mode tempo jour".format(
+                                runMode)
+                        thermostat.setMode(32)
+
+                    print "Running Mode: {} , Mode: {}".format(
+                        thermostat.getRunningModeString(), thermostat.getModeString())
+
+                else:
+                    sentence = "Je n'ai pas compris s'il fait froid ou s'il fait chaud."
+
+            else:
+                sentence = "Je ne comprends pas l'action à effectuer avec le thermostat."
+
+            hermes.publish_end_session(intent_message.session_id, sentence)
+            return
 
 
 with Hermes(MQTT_ADDR) as h:
@@ -91,12 +183,12 @@ with Hermes(MQTT_ADDR) as h:
     try:
         thermostat = open_thermostat(config)
         #thermostat = Thermostat(ip)
-        thermostat.setSetpointDay(207)
-        thermostat.setSetpointNight(195)
-        thermostat.addSetpointDay(1)
-        thermostat.addSetpointNight(5)
-        thermostat.setMode(0)
-        thermostat.update()
+        # thermostat.setSetpointDay(207)
+        # thermostat.setSetpointNight(195)
+        # thermostat.addSetpointDay(1)
+        # thermostat.addSetpointNight(5)
+        # thermostat.setMode(0)
+        # thermostat.update()
         thermostat.read()
 
     except Exception as e:

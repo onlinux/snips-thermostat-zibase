@@ -1,12 +1,13 @@
 [global]
-tempVariable=
-setpointDayVariable=
-setpointNightVariable=
-modeVariable=
-statusVariable=
+tempvariable= 28
+setpointdayvariable= 29
+setpointnightvariable= 30
+modevariable= 31
+statevariable= 13
+thermostatscenario= 32
+thermostatprobeid = 13
 
 [secret]
 ip_zibase=192.168.0.100
 [feedback]
 enable=false
-

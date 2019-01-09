@@ -5,6 +5,7 @@
 # Auteur : Benjamin GAREL
 # Version : 1.6.0
 # Mars 2011
+# Modification par Eric Vandecasteele
 ################################################################################
 
 from array import array
@@ -25,8 +26,8 @@ class ZbProtocol:
     ZWAVE = 6
     RFS10 = 7
     X2D433 = 8
-    X2D868 = 9          
-    
+    X2D868 = 9
+
 class ZbAction:
     """ Action possible de la zibase """
     OFF = 0
@@ -38,12 +39,12 @@ class ZbAction:
     ASSOC = 7
 
 def createZbCalendarFromInteger(data):
-    """ Créer un objet ZbCalendar à partir d'un entier venant de la zibase    
+    """ Crï¿½er un objet ZbCalendar ï¿½ partir d'un entier venant de la zibase
     """
     cal = ZbCalendar()
     for i in range(24):
         cal.hour[i] = (data & (1 << i)) >> i
-    
+
     cal.day["lundi"] = (data & (1 << 24)) >> 24
     cal.day["mardi"] = (data & (1 << 25)) >> 25
     cal.day["mercredi"] = (data & (1 << 26)) >> 26
@@ -52,23 +53,23 @@ def createZbCalendarFromInteger(data):
     cal.day["samedi"] = (data & (1 << 29)) >> 29
     cal.day["dimanche"] = (data & (1 << 30)) >> 30
     return cal
-    
+
 
 class ZbCalendar(object):
-    """Représente une variable calendrier de la zibase"""
-    
+    """Reprï¿½sente une variable calendrier de la zibase"""
+
     def __init__(self):
         self.hour = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         self.day = {"lundi":0, "mardi":0, "mercredi":0, "jeudi":0, "vendredi":0, "samedi":0, "dimanche":0}
-           
-           
+
+
     def toInteger(self):
-        """ Retourne l'entier 32bits représentant ce calendrier        
+        """ Retourne l'entier 32bits reprï¿½sentant ce calendrier
         """
         data = 0x00000000
         for i in range(24):
             data |= self.hour[i] << i
-        
+
         data |= self.day["lundi"] << 24
         data |= self.day["mardi"] << 25
         data |= self.day["mercredi"] << 26
@@ -77,28 +78,28 @@ class ZbCalendar(object):
         data |= self.day["samedi"] << 29
         data |= self.day["dimanche"] << 30
         return data
-        
+
 
 class ZbRequest(object):
-    """ Représente une requête à la zibase """
-    
+    """ Reprï¿½sente une requï¿½te ï¿½ la zibase """
+
     def __init__(self):
         self.header = bytearray("ZSIG")
         self.command = 0
         self.reserved1 = ''
         self.zibaseId = ''
-        self.reserved2 = ''        
+        self.reserved2 = ''
         self.param1 = 0
         self.param2 = 0
         self.param3 = 0
         self.param4 = 0
         self.myCount = 0
-        self.yourCount = 0        
-        self.message = ''      
-     
-        
+        self.yourCount = 0
+        self.message = ''
+
+
     def toBinaryArray(self):
-        """ Serialize la requête en chaine binaire """
+        """ Serialize la requï¿½te en chaine binaire """
         buffer = array('B')
         buffer = self.header
         buffer.extend(struct.pack('!H', self.command))
@@ -114,85 +115,85 @@ class ZbRequest(object):
         if len(self.message) > 0:
             buffer.extend(self.message.ljust(96, chr(0)))
         return buffer
-    
+
 
 class ZbResponse(object):
-    """ Représente une réponse de la zibase """
-    
+    """ Reprï¿½sente une rï¿½ponse de la zibase """
+
     def __init__(self, buffer):
-        """ Construction de la réponse à partir de la chaine binaire reçue """              
+        """ Construction de la rï¿½ponse ï¿½ partir de la chaine binaire reï¿½ue """
         self.header = buffer[0:4]
         self.command = struct.unpack("!H", buffer[4:6])[0]
         self.reserved1 = buffer[6:22]
         self.zibaseId = buffer[22:38]
-        self.reserved2 = buffer[38:50]        
+        self.reserved2 = buffer[38:50]
         self.param1 = struct.unpack("!I", buffer[50:54])[0]
         self.param2 = struct.unpack("!I", buffer[54:58])[0]
         self.param3 = struct.unpack("!I", buffer[58:62])[0]
         self.param4 = struct.unpack("!I", buffer[62:66])[0]
         self.myCount = struct.unpack("!H", buffer[66:68])[0]
         self.yourCount = struct.unpack("!H", buffer[68:70])[0]
-        self.message = buffer[70:]    
+        self.message = buffer[70:]
 
-    
+
 class ZiBase(object):
     """ Classe principale permettant de communiquer avec la ZiBase """
-    
+
     def __init__(self, ip):
         """ Indiquer l'adresse IP de la ZiBase """
         self.ip = ip
         self.port = 49999
-    
-         
+
+
     def sendRequest(self, request):
-        """ Envoi la requete à la zibase à travers le réseau """
+        """ Envoi la requete ï¿½ la zibase ï¿½ travers le rï¿½seau """
         buffer = request.toBinaryArray()
         response = None
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(5)
-        s.connect((self.ip, self.port))        
+        s.connect((self.ip, self.port))
         s.send(buffer)
         ack = s.recv(512)
         if len(ack) > 0:
-            response = ZbResponse(ack)        
+            response = ZbResponse(ack)
         s.close()
         return response
-    
-    
+
+
     def sendCommand(self, address, action, protocol = ZbProtocol.PRESET, dimLevel = 0, nbBurst = 1):
-        """ Envoi d'une commande à la zibase """
-        if len(address) >= 2:            
+        """ Envoi d'une commande ï¿½ la zibase """
+        if len(address) >= 2:
             address = address.upper()
-            req = ZbRequest()            
-            req.command = 11         
+            req = ZbRequest()
+            req.command = 11
             if action == ZbAction.DIM_BRIGHT and dimLevel == 0:
-                action = ZbAction.OFF            
+                action = ZbAction.OFF
             req.param2 = action
             req.param2 |= (protocol & 0xFF) << 0x08
             if action == ZbAction.DIM_BRIGHT:
                 req.param2 |= (dimLevel & 0xFF) << 0x10
             if nbBurst > 1:
-                req.param2 |= (nbBurst & 0xFF) << 0x18                        
+                req.param2 |= (nbBurst & 0xFF) << 0x18
             req.param3 = int(address[1:]) - 1
-            req.param4 = ord(address[0]) - 0x41                        
-            self.sendRequest(req)    
-            
-            
+            req.param4 = ord(address[0]) - 0x41
+            self.sendRequest(req)
+
+
     def runScenario(self, numScenario):
-        """ Lance le scenario spécifié par son numéro.
-            Le numéro du scenario est indiqué entre parenthèse
-            dans le suivi d'activité de la console de configuration.      
+        """ Lance le scenario spï¿½cifiï¿½ par son numï¿½ro.
+            Le numï¿½ro du scenario est indiquï¿½ entre parenthï¿½se
+            dans le suivi d'activitï¿½ de la console de configuration.
         """
         req = ZbRequest()
         req.command = 11
         req.param1 = 1
         req.param2 = numScenario
-        self.sendRequest(req)       
-    
-     
+        self.sendRequest(req)
+
+
     def getVariable(self, numVar):
-        """ Récupère la valeur d'une variable Vx de la Zibase
-            Numéro de variable compris entre 0 et 19
+        """ Rï¿½cupï¿½re la valeur d'une variable Vx de la Zibase
+            Numï¿½ro de variable compris entre 0 et 19
         """
         req = ZbRequest()
         req.command = 11
@@ -204,12 +205,12 @@ class ZiBase(object):
             return res.param1
         else:
             return None
-        
+
 
     def getState(self, address):
-        """ Récupère l'état d'un actionneur.
-            La zibase ne reçoit que les ordres RF et non les ordre CPL X10,
-            donc l'état d'un actionneur X10 connu par la zibase peut être erronné.
+        """ Rï¿½cupï¿½re l'ï¿½tat d'un actionneur.
+            La zibase ne reï¿½oit que les ordres RF et non les ordre CPL X10,
+            donc l'ï¿½tat d'un actionneur X10 connu par la zibase peut ï¿½tre erronnï¿½.
         """
         if len(address) > 0:
             address = address.upper()
@@ -217,22 +218,22 @@ class ZiBase(object):
             req.command = 11
             req.param1 = 5
             req.param3 = 4
-            
+
             houseCode = ord(address[0]) - 0x41
             device = int(address[1:]) - 1
             req.param4 = device
             req.param4 |= (houseCode & 0xFF) << 0x04
-            
+
             res = self.sendRequest(req)
             if res != None:
                 return res.param1
             else:
                 return None
-    
-            
+
+
     def setVariable(self, numVar, value):
-        """ Met à jour une variable zibase avec la valeur spécifiée
-            variable comprise entre 0 et 19        
+        """ Met ï¿½ jour une variable zibase avec la valeur spï¿½cifiï¿½e
+            variable comprise entre 0 et 19
         """
         req = ZbRequest()
         req.command = 11
@@ -241,11 +242,11 @@ class ZiBase(object):
         req.param4 = numVar
         req.param2 = value & 0xFFFF
         self.sendRequest(req)
-        
-      
+
+
     def getCalendar(self, numCal):
-        """ Récupère la valeur d'un calendrier dynamique de la Zibase
-            Numéro de calendrier compris entre 1 et 16
+        """ Rï¿½cupï¿½re la valeur d'un calendrier dynamique de la Zibase
+            Numï¿½ro de calendrier compris entre 1 et 16
         """
         req = ZbRequest()
         req.command = 11
@@ -257,12 +258,12 @@ class ZiBase(object):
             return createZbCalendarFromInteger(res.param1)
         else:
             return None
-        
-        
+
+
     def setCalendar(self, numCal, calendar):
-        """ Met à jour le contenu d'un calendrier dynamique de la zibase
-            Numéro du calendrier compris entre 1 et 16
-        """                  
+        """ Met ï¿½ jour le contenu d'un calendrier dynamique de la zibase
+            Numï¿½ro du calendrier compris entre 1 et 16
+        """
         req = ZbRequest()
         req.command = 11
         req.param1 = 5
@@ -270,10 +271,10 @@ class ZiBase(object):
         req.param4 = numCal - 1
         req.param2 = calendar.toInteger()
         self.sendRequest(req)
-    
-        
+
+
     def execScript(self, script):
-        """ Lance l'exécution d'un script 
+        """ Lance l'exï¿½cution d'un script
             Ex: lm [mon scenario] (= lance le scenarion "mon scenario")
             Ex: lm 2 aft 3200 (= lance le scenario 2 dans une heure)
             Ex : lm [test1].lm [test2] (= lance test1 puis test2)
@@ -283,35 +284,32 @@ class ZiBase(object):
             req.command = 16
             req.message = "cmd: " + script
             self.sendRequest(req)
-    
-       
-    def getSensorInfo(self, idSensor):
-        """ Retourne les valeurs v1 et v2 du capteur spécifié
-            ainsi que la date heure du relevé.
+
+
+    def getSensorInfo(self, pro, id):
+        """ Retourne les valeurs v1 et v2 du capteur spÃ©cifiÃ©
+            ainsi que la date heure du relevÃ©.
             Pour les sondes Oregon et TS10, il faut diviser v1 par 10.
             Tableau en retour :
-            index 0 => date du relevé
+            index 0 => date du relevÃ©
             index 1 => v1
-            index 2 => v2        
+            index 2 => v2
         """
-        if len(idSensor) > 0:
+        if id > 0:
             url = "http://" + self.ip + "/sensors.xml"
             handle = urllib.urlopen(url)
             xmlContent = handle.read()
             handle.close()
-            type = idSensor[0:2]
-            number = idSensor[2:]
+            #type = idSensor[0:3]
+            #number = idSensor[3:]
             xmlDoc = xml.dom.minidom.parseString(xmlContent)
             nodes = xmlDoc.getElementsByTagName("ev")
+
             for node in nodes:
-                if node.getAttribute("pro") == type and node.getAttribute("id") == number:
+                if node.getAttribute("pro") == pro and node.getAttribute("id") == id:
                     v1 = int(node.getAttribute("v1"))
                     v2 = int(node.getAttribute("v2"))
                     dateHeure = datetime.fromtimestamp(int(node.getAttribute("gmt")))
+                    print dateHeure, v1, v2
                     info = [dateHeure, v1, v2]
                     return info
-        
-        
-        
-      
-      
