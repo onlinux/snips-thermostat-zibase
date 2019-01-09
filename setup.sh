@@ -18,5 +18,5 @@ fi
 . $VENV/bin/activate
 
 pip install -r requirements.txt
-
+touch thermostat.log
 cp config.ini.default config.ini
