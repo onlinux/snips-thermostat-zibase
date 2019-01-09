@@ -19,5 +19,5 @@ fi
 
 pip install -r requirements.txt
 touch thermostat.log
-chmod 774 thermostat.log
+chmod 666 thermostat.log
 cp config.ini.default config.ini
