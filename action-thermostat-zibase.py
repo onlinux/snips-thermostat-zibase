@@ -122,7 +122,9 @@ def intent_received(hermes, intent_message):
                 setPoint = None
                 runningMode = thermostat.getRunningModeString()
                 runMode = thermostat.getModeString()
-
+                print "runningMode: {}, runMode: {}".format(
+                    runningMode, runMode
+                )
                 if runMode == 'stop' or runMode == 'hors gel':
                     sentence = "Désolée mais nous sommes en mode {}. Je ne fais rien dans ce cas.".format(
                         runMode)
@@ -157,7 +159,7 @@ def intent_received(hermes, intent_message):
                                 runMode)
                         thermostat.setMode(32)
 
-                    print "Running Mode: {} , Mode: {}".format(
+                    print "After action-> RunningMode: {} , runMode: {}".format(
                         thermostat.getRunningModeString(), thermostat.getModeString())
 
                 else:
@@ -166,6 +168,7 @@ def intent_received(hermes, intent_message):
             else:
                 sentence = "Je ne comprends pas l'action à effectuer avec le thermostat."
 
+            print sentence
             hermes.publish_end_session(intent_message.session_id, sentence)
             return
 
