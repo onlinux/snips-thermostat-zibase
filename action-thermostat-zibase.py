@@ -185,13 +185,6 @@ with Hermes(MQTT_ADDR) as h:
 
     try:
         thermostat = open_thermostat(config)
-        #thermostat = Thermostat(ip)
-        # thermostat.setSetpointDay(207)
-        # thermostat.setSetpointNight(195)
-        # thermostat.addSetpointDay(1)
-        # thermostat.addSetpointNight(5)
-        # thermostat.setMode(0)
-        # thermostat.update()
         thermostat.read()
 
     except Exception as e:

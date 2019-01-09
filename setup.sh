@@ -1,5 +1,10 @@
 #/usr/bin/env bash -e
 
+if [ ! -e "./config.ini" ]
+then
+    cp config.ini.default config.ini
+fi
+
 VENV=venv
 
 if [ ! -d "$VENV" ]
@@ -20,4 +25,3 @@ fi
 pip install -r requirements.txt
 touch thermostat.log
 chmod 666 thermostat.log
-cp config.ini.default config.ini

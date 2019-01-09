@@ -6,7 +6,7 @@
 ### SAM (preferred)
 To install the action on your device, you can use [Sam](https://snips.gitbook.io/getting-started/installation)
 
-`sam install action -g https://github.com/onlinux/snips-thermostat-zibase.git`
+`sam install actions -g https://github.com/onlinux/snips-thermostat-zibase.git`
 
 ### Manually
 

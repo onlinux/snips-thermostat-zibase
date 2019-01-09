@@ -69,7 +69,7 @@ class Thermostat:
         logging.basicConfig(
             format='%(asctime)s %(levelname)s:%(message)s',
             filename='./thermostat.log',
-            level=logging.DEBUG)
+            level=logging.ERROR)
 
         self.zibase = ZiBase.ZiBase(ip)
         self.read()
