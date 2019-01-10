@@ -23,7 +23,7 @@ MQTT_PORT = 1883
 MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 
 THERMOSTAT = 'ericvde31830:thermostat'
-THERMOSTATSET = 'ericvde31830:thermostatSet'
+THERMOSTATSET = 'ericvde31830:ZibaseThermostatSet'
 THERMOSTATSHIFT = 'ericvde31830:thermostatShift'
 THERMOSTATTURNOFF = 'ericvde312830:thermostatTurnOff'
 
@@ -86,28 +86,27 @@ def open_thermostat(config):
 def intent_received(hermes, intent_message):
     intentName = intent_message.intent.intent_name
     sentence = 'Voilà c\'est fait.'
-    print thermostat.getModeString()
 
     for (slot_value, slot) in intent_message.slots.items():
         print('Slot {} -> \n\tRaw: {} \tValue: {}'
               .format(slot_value, slot[0].raw_value, slot[0].slot_value.value.value))
 
     if intentName == THERMOSTATSET:
-        if intent_message.slots.temperature:
-            temperature = intent_message.slots.temperature.first().value
+        if intent_message.slots.temperature_decimal:
+            temperature = intent_message.slots.temperature_decimal.first().value
             print "Température reconnue:", temperature
             runningMode = thermostat.getRunningModeString()
             runMode = thermostat.getModeString()
 
             if runningMode == 'nuit':
-                thermostat.setSetpointNight(int(temperature) * 10)
+                thermostat.setSetpointNight(int(temperature) )
 
             elif runningMode == 'jour':
-                thermostat.setSetpointday(int(temperature) * 10)
+                thermostat.setSetpointDay(int(temperature) )
 
             thermostat.update()
             sentence = "Ok, je passe la consigne de {} à {} degrés".format(
-                runningMode, str(temperature))
+                runningMode, str(temperature/10.0))
             hermes.publish_end_session(intent_message.session_id, sentence)
             return
 

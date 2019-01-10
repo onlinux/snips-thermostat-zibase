@@ -180,6 +180,8 @@ class Thermostat:
         self.setpointDayValue = value
         self.setVariable(self.setpointDayVariableId, value)
         logging.debug(' Send setpoindDay %i  to %s ' % (value, self.ip))
+        #self.update()
+
 
     def getSetpointDay(self):
         return self.zibase.getVariable(self.setpointDayVariableId)
@@ -188,9 +190,14 @@ class Thermostat:
         value = int(value)
         if value > 230:
             value = 230
+        elif value < 140:
+            value = 140
+
         self.setpointNightValue = value
         self.setVariable(self.setpointNightVariableId, value)
         logging.debug(' Send setpoindNight %i  to %s ' % (value, self.ip))
+        #self.update()
+
 
     def getSetpointNight(self):
         return self.zibase.getVariable(self.setpointNightVariableId)
