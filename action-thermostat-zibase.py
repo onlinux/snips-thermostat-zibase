@@ -86,10 +86,23 @@ def open_thermostat(config):
 def intent_received(hermes, intent_message):
     intentName = intent_message.intent.intent_name
     sentence = 'Voilà c\'est fait.'
+    print intentName
 
     for (slot_value, slot) in intent_message.slots.items():
         print('Slot {} -> \n\tRaw: {} \tValue: {}'
               .format(slot_value, slot[0].raw_value, slot[0].slot_value.value.value))
+
+
+    if intentName == THERMOSTATTURNOFF:
+
+        print "Thermostat turnOff"
+        if intent_message.slots.temperature_device:
+            thermostat.setMode(48)  # Turn nightMode on
+            sentence = "Ok, je passe en mode nuit."
+            print sentence
+            hermes.publish_end_session(intent_message.session_id, sentence)
+            return
+
 
     if intentName == THERMOSTATSET:
         if intent_message.slots.temperature_decimal:
@@ -142,7 +155,7 @@ def intent_received(hermes, intent_message):
                             runMode, setPoint)
 
                 elif action == "up":
-                    if runningMode == 'jour' or "jour" in runMode:
+                    if "nuit" not in runMode and runningMode == 'jour' or "jour" in runMode :
                         thermostat.addSetpointDay(1)
                         setPoint = str(thermostat.getSetpointDay()
                                        / 10.0).replace('.', ',')
