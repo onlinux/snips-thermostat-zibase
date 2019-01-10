@@ -25,7 +25,7 @@ MQTT_ADDR = "{}:{}".format(MQTT_IP_ADDR, str(MQTT_PORT))
 THERMOSTAT = 'ericvde31830:thermostat'
 THERMOSTATSET = 'ericvde31830:ZibaseThermostatSet'
 THERMOSTATSHIFT = 'ericvde31830:thermostatShift'
-THERMOSTATTURNOFF = 'ericvde312830:thermostatTurnOff'
+THERMOSTATTURNOFF = 'ericvde31830:thermostatTurnOff'
 
 
 def open_thermostat(config):
