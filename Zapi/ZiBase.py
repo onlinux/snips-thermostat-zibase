@@ -14,7 +14,22 @@ import urllib
 import struct
 import xml.dom.minidom
 from datetime import datetime
+import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s:%(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 class ZbProtocol:
     """ Protocoles compatibles Zibase """
     PRESET = 0
@@ -310,6 +325,6 @@ class ZiBase(object):
                     v1 = int(node.getAttribute("v1"))
                     v2 = int(node.getAttribute("v2"))
                     dateHeure = datetime.fromtimestamp(int(node.getAttribute("gmt")))
-                    print dateHeure, v1, v2
+                    logger.debug("getSensorInfo id[%s] v1:%d v2:%d" % (id, v1, v2) )
                     info = [dateHeure, v1, v2]
                     return info

@@ -11,6 +11,21 @@ import time
 import logging
 from Zapi import ZiBase
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s:%(message)s')
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
+
 
 class Thermostat:
     'Common base class for thermostat'
@@ -66,11 +81,6 @@ class Thermostat:
         self.modeValue = None
         self.modeIndex = None
         self.title = 'Thermostat'
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s:%(message)s',
-            filename='./thermostat.log',
-            level=logging.ERROR)
-
         self.zibase = ZiBase.ZiBase(ip)
         self.read()
 
@@ -111,7 +121,7 @@ class Thermostat:
         if probe:
             self.runningMode = int(probe[2]) & 0x1
         else:
-            logging.error(' Could not find any Thermostat with id TT {}'.format(
+            logger.error(' Could not find any Thermostat with id TT {}'.format(
                 self.thermostatProbeId))
             return
 
@@ -122,11 +132,11 @@ class Thermostat:
             self.state = 0
 
         elapsed = (time.time() - start) * 1000
-        logging.debug(' indoorTemp [%d] setpointDay [%d] setpointNight [%d] mode [%d] [%s] state [%d] [%s] running mode [%d]' % (
+        logger.info(' indoorTemp[%d] setpointDay[%d] setpointNight[%d] runMode[%d][%s] state[%d][%s] runningMode[%d][%s]' % (
             self.indoorTemp, self.setpointDayValue, self.setpointNightValue,
             self.modeValue, Thermostat.mode[self.modeValue], self.state,
-            Thermostat.state[self.state], self.runningMode))
-        logging.debug(' retrieve data from %s in [%d ms]' % (self.ip, elapsed))
+            Thermostat.state[self.state], self.runningMode, self.getRunningModeString()))
+        logger.debug(' retrieve data from %s in [%d ms]' % (self.ip, elapsed))
 
     def setVariable(self, variable, value):
         if variable < 52:
@@ -134,21 +144,22 @@ class Thermostat:
             self.zibase.setVariable(variable, value)
             elapsed = (time.time() - start) * 1000
             time.sleep(1)
-            logging.debug(
+            logger.debug(
                 ' setVariable [%i] = %i  [%d ms]' %
                 (int(variable), int(value), elapsed))
         else:
-            logging.warning(' setVariable  [%s]  is not int' % (str(variable)))
+            logger.warning(
+                ' setVariable  [%s]  cannot be > 52!' % (str(variable)))
 
     def setMode(self, mode=0):
         if mode in Thermostat.mode:
             self.modeValue = int(mode)
             self.setVariable(self.modeVariableId, int(mode))
 
-            logging.debug(' Send mode %i [%s]  to %s ' % (
+            logger.debug(' Send mode %i [%s]  to %s ' % (
                 int(mode), Thermostat.mode[self.modeValue], self.ip))
         else:
-            logging.debug(
+            logger.debug(
                 ' Send mode %i  to %s . Error: invalid mode' %
                 (int(mode), self.ip))
 
@@ -179,9 +190,8 @@ class Thermostat:
             value = 230
         self.setpointDayValue = value
         self.setVariable(self.setpointDayVariableId, value)
-        logging.debug(' Send setpoindDay %i  to %s ' % (value, self.ip))
-        #self.update()
-
+        logger.debug(' Send setpoindDay %i  to %s ' % (value, self.ip))
+        # self.update()
 
     def getSetpointDay(self):
         return self.zibase.getVariable(self.setpointDayVariableId)
@@ -195,9 +205,8 @@ class Thermostat:
 
         self.setpointNightValue = value
         self.setVariable(self.setpointNightVariableId, value)
-        logging.debug(' Send setpoindNight %i  to %s ' % (value, self.ip))
-        #self.update()
-
+        logger.debug(' Send setpoindNight %i  to %s ' % (value, self.ip))
+        # self.update()
 
     def getSetpointNight(self):
         return self.zibase.getVariable(self.setpointNightVariableId)
@@ -217,5 +226,5 @@ class Thermostat:
 
     def update(self):
         self.zibase.runScenario(self.thermostatScenarioId)
-        logging.debug(' Send force-update scenario %i  to %s ' %
-                      (int(self.thermostatScenarioId), self.ip))
+        logger.debug(' Send force-update scenario %i  to %s ' %
+                     (int(self.thermostatScenarioId), self.ip))
