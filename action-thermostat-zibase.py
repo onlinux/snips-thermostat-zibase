@@ -8,6 +8,7 @@
 #
 # Import required Python libraries
 import logging
+import logging.config
 from thermostat import Thermostat
 from hermes_python.hermes import Hermes
 from snipshelpers.config_parser import SnipsConfigParser
@@ -16,12 +17,6 @@ from snipshelpers.config_parser import SnipsConfigParser
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
-# add ch to logger
-logger.addHandler(ch)
 
 CONFIG_INI = "config.ini"
 MQTT_IP_ADDR = "localhost"
@@ -34,6 +29,8 @@ THERMOSTATSHIFT = 'ericvde31830:thermostatShift'
 THERMOSTATTURNOFF = 'ericvde31830:thermostatTurnOff'
 THERMOSTATMODE = 'ericvde31830:thermostatMode'
 
+logging.config.fileConfig(CONFIG_INI)
+logger = logging.getLogger(__name__)
 
 def open_thermostat(config):
     ip = config.get(
@@ -235,7 +232,7 @@ with Hermes(MQTT_ADDR) as h:
 
     try:
         thermostat=open_thermostat(config)
-        logger.debug('Thermostat initialization: OK')
+        logger.info('Thermostat initialization: OK')
 
     except Exception as e:
         zibase=None
