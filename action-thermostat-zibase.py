@@ -79,7 +79,7 @@ def open_thermostat(config):
     print (" Thermostat Mode:{}").format(thermostat.getModeString())
     print (" Thermostat State:{}").format(thermostat.getStateString())
     print (" Thermostat running Mode:{}").format(
-        thermostat.getRunningModeString())
+        thermostat.getRunModeString())
     return thermostat
 
 
@@ -92,7 +92,6 @@ def intent_received(hermes, intent_message):
         print('Slot {} -> \n\tRaw: {} \tValue: {}'
               .format(slot_value, slot[0].raw_value, slot[0].slot_value.value.value))
 
-
     if intentName == THERMOSTATTURNOFF:
 
         print "Thermostat turnOff"
@@ -103,23 +102,26 @@ def intent_received(hermes, intent_message):
             hermes.publish_end_session(intent_message.session_id, sentence)
             return
 
-
     if intentName == THERMOSTATSET:
         if intent_message.slots.temperature_decimal:
             temperature = intent_message.slots.temperature_decimal.first().value
             print "Température reconnue:", temperature
-            runningMode = thermostat.getRunningModeString()
-            runMode = thermostat.getModeString()
+            runMode = thermostat.getRunModeString()
+            mode = thermostat.getModeString()
 
-            if runningMode == 'nuit':
-                thermostat.setSetpointNight(int(temperature) )
-
-            elif runningMode == 'jour':
-                thermostat.setSetpointDay(int(temperature) )
+            if runMode == 'nuit' and 'jour' not in mode:
+                thermostat.setSetpointNight(int(temperature))
+                sentence = "Ok, je passe la consigne de {} à {} degrés".format(
+                    runMode, str(temperature / 10.0))
+            elif runMode == 'jour' and 'nuit' not in mode:
+                thermostat.setSetpointDay(int(temperature))
+                sentence = "Ok, je passe la consigne de {} à {} degrés".format(
+                    runMode, str(temperature / 10.0))
+            else:
+                sentence = "Désolée mais je ne sais pas quelle consigne changer car le mode est {}".format(
+                    mode)
 
             thermostat.update()
-            sentence = "Ok, je passe la consigne de {} à {} degrés".format(
-                runningMode, str(temperature/10.0))
             hermes.publish_end_session(intent_message.session_id, sentence)
             return
 
@@ -132,47 +134,47 @@ def intent_received(hermes, intent_message):
             if action is not None:
 
                 setPoint = None
-                runningMode = thermostat.getRunningModeString()
-                runMode = thermostat.getModeString()
-                print "runningMode: {}, runMode: {}".format(
-                    runningMode, runMode
+                runMode = thermostat.getRunModeString()
+                mode = thermostat.getModeString()
+                print "runMode: {}, Mode: {}".format(
+                    runMode, mode
                 )
-                if runMode == 'stop' or runMode == 'hors gel':
+                if mode == 'stop' or mode == 'hors gel':
                     sentence = "Désolée mais nous sommes en mode {}. Je ne fais rien dans ce cas.".format(
-                        runMode)
+                        mode)
                 elif action == 'down':
-                    if runningMode == 'jour' or "jour" in thermostat.getModeString():
+                    if runMode == 'jour' or 'jour' in mode:
                         thermostat.addSetpointDay(-1)
                         setPoint = str(thermostat.getSetpointDay()
                                        / 10.0).replace('.', ',')
                         sentence = "Nous sommes en mode {}, je descends donc la consigne de jour à {} degrés.".format(
-                            runMode, setPoint)
+                            mode, setPoint)
                     else:
                         thermostat.addSetpointNight(-1)
                         setPoint = str(thermostat.getSetpointNight()
                                        / 10.0).replace('.', ',')
-                        sentence = "Nous sommes en mode {}, je descends donc la consigne de nuit à {} degrés.".format(
-                            runMode, setPoint)
+                        sentence = "Nous sommes en mode {} économique, je descends donc la consigne de nuit à {} degrés.".format(
+                            mode, setPoint)
 
                 elif action == "up":
-                    if "nuit" not in runMode and runningMode == 'jour' or "jour" in runMode :
+                    if 'nuit' not in mode and runMode == 'jour' or 'jour' in mode:
                         thermostat.addSetpointDay(1)
                         setPoint = str(thermostat.getSetpointDay()
                                        / 10.0).replace('.', ',')
                         sentence = "Nous sommes en mode {}, je monte la consigne de jour à {} degrés.".format(
-                            runMode, setPoint)
+                            mode, setPoint)
                     else:
                         # switch to mode tempo-jour
-                        if runningMode == 'nuit' and runMode == 'automatique':
+                        if runMode == 'nuit' and mode == 'automatique':
                             sentence = "Nous sommes en mode {} économique, je passe donc en mode tempo jour".format(
-                                runMode)
+                                mode)
                         else:
                             sentence = "Nous sommes en mode {}, je passe donc en mode tempo jour".format(
-                                runMode)
+                                mode)
                         thermostat.setMode(32)
 
-                    print "After action-> RunningMode: {} , runMode: {}".format(
-                        thermostat.getRunningModeString(), thermostat.getModeString())
+                    print "After action-> runMode: {} , mode: {}".format(
+                        thermostat.getRunModeString(), thermostat.getModeString())
 
                 else:
                     sentence = "Je n'ai pas compris s'il fait froid ou s'il fait chaud."
@@ -197,7 +199,6 @@ with Hermes(MQTT_ADDR) as h:
 
     try:
         thermostat = open_thermostat(config)
-        thermostat.read()
 
     except Exception as e:
         zibase = None

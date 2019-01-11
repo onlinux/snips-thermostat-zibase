@@ -73,7 +73,7 @@ class Thermostat:
         self.state = None
         self.indoorTemp = None
         self.outdoorTemp = None
-        self.runningMode = None
+        self.runMode = None
         self.setpointDayValue = None
         self.setpointDay = None
         self.setpointNightValue = None
@@ -119,7 +119,7 @@ class Thermostat:
 
         probe = zibase.getSensorInfo('TT', str(self.thermostatProbeId))
         if probe:
-            self.runningMode = int(probe[2]) & 0x1
+            self.runMode = int(probe[2]) & 0x1
         else:
             logger.error(' Could not find any Thermostat with id TT {}'.format(
                 self.thermostatProbeId))
@@ -132,10 +132,10 @@ class Thermostat:
             self.state = 0
 
         elapsed = (time.time() - start) * 1000
-        logger.info(' indoorTemp[%d] setpointDay[%d] setpointNight[%d] runMode[%d][%s] state[%d][%s] runningMode[%d][%s]' % (
+        logger.info(' indoorTemp[%d] setpointDay[%d] setpointNight[%d] runMode[%d][%s] state[%d][%s] runMode[%d][%s]' % (
             self.indoorTemp, self.setpointDayValue, self.setpointNightValue,
             self.modeValue, Thermostat.mode[self.modeValue], self.state,
-            Thermostat.state[self.state], self.runningMode, self.getRunningModeString()))
+            Thermostat.state[self.state], self.runMode, self.getRunModeString()))
         logger.debug(' retrieve data from %s in [%d ms]' % (self.ip, elapsed))
 
     def setVariable(self, variable, value):
@@ -175,12 +175,12 @@ class Thermostat:
     def getModeString(self):
         return Thermostat.mode[self.getMode()]
 
-    def getRunningMode(self):
-        return (self.runningMode)
+    def getRunMode(self):
+        return (self.runMode)
 
-    def getRunningModeString(self):
-        if self.runningMode is not None:
-            return Thermostat.runMode[self.runningMode]
+    def getRunModeString(self):
+        if self.runMode is not None:
+            return Thermostat.runMode[self.runMode]
         else:
             return None
 
