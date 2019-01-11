@@ -7,6 +7,7 @@
 #
 #
 # Import required Python libraries
+import os
 import logging
 import logging.config
 from thermostat import Thermostat
@@ -29,9 +30,15 @@ THERMOSTATSHIFT = 'ericvde31830:thermostatShift'
 THERMOSTATTURNOFF = 'ericvde31830:thermostatTurnOff'
 THERMOSTATMODE = 'ericvde31830:thermostatMode'
 
-logging.config.fileConfig(CONFIG_INI)
-logger = logging.getLogger(__name__)
+# os.path.realpath returns the canonical path of the specified filename,
+# eliminating any symbolic links encountered in the path.
+path = os.path.dirname(os.path.realpath(sys.argv[0]))
+configPath = path + '/' + CONFIG_INI
+print configPath
 
+logging.config.fileConfig(configPath)
+logger = logging.getLogger(__name__)
+print configPath
 def open_thermostat(config):
     ip = config.get(
         'secret', {
@@ -223,7 +230,7 @@ def intent_received(hermes, intent_message):
 with Hermes(MQTT_ADDR) as h:
 
     try:
-        config=SnipsConfigParser.read_configuration_file(CONFIG_INI)
+        config=SnipsConfigParser.read_configuration_file(configPath)
 
     except BaseException:
         config=None
