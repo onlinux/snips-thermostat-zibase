@@ -5,7 +5,6 @@
 # http://blog.onlinux.fr
 #
 #
-#
 # Import required Python libraries
 import os
 import logging
@@ -34,11 +33,11 @@ THERMOSTATMODE = 'ericvde31830:thermostatMode'
 # eliminating any symbolic links encountered in the path.
 path = os.path.dirname(os.path.realpath(sys.argv[0]))
 configPath = path + '/' + CONFIG_INI
-print configPath
 
 logging.config.fileConfig(configPath)
 logger = logging.getLogger(__name__)
-print configPath
+
+
 def open_thermostat(config):
     ip = config.get(
         'secret', {
@@ -89,8 +88,12 @@ def open_thermostat(config):
         thermostat.tempStr(thermostat.getTemp() / 10.0)))
     logger.debug(" Thermostat Mode:{}".format(thermostat.getModeString()))
     logger.debug(" Thermostat State:{}".format(thermostat.getStateString()))
-    logger.debug(" Thermostat running Mode:{}".format(
+    logger.debug(" Thermostat runMode:{}".format(
         thermostat.getRunModeString()))
+    logger.debug(" setpoint Day:  {}°C".format(
+        thermostat.getSetpointDay() / 10.0))
+    logger.debug(" setpoint Night:{}°C".format(
+        thermostat.getSetpointNight() / 10.0))
     return thermostat
 
 
@@ -104,7 +107,7 @@ def intent_received(hermes, intent_message):
                      .format(slot_value, slot[0].raw_value, slot[0].slot_value.value.value))
 
     if intentName == THERMOSTATMODE:
-
+        thermostat.read()
         logger.debug("Change thermostat mode")
         if intent_message.slots.thermostat_mode:
             tmode = intent_message.slots.thermostat_mode.first().value
@@ -112,20 +115,12 @@ def intent_received(hermes, intent_message):
                 "Je dois passer le thermostat en mode {}".format(tmode))
             sentence = "OK, je passe le thermostat en mode {}".format(tmode)
 
-            if tmode == 'automatique':
-                thermostat.setMode(0)
-            elif tmode == 'stop':
-                thermostat.setMode(5)
-            elif tmode == 'hors gel':
-                thermostat.setMode(6)
-            elif tmode == 'jour':
-                thermostat.setMode(16)
-            elif tmode == 'tempo jour':
-                thermostat.setMode(32)
-            elif tmode == 'nuit':
-                thermostat.setMode(48)
-            elif tmode == 'tempo nuit' or tmode == 'économique':
-                thermostat.setMode(64)
+            # Invert Thermostat.mode dict first
+            inv_mode = {value: key for key, value in Thermostat.mode.items()}
+            logger.debug(inv_mode)
+            if tmode in inv_mode:
+                thermostat.setMode(inv_mode[tmode])
+
             else:
                 sentence = 'Désolée mais je ne connais pas le mode {}'.format(
                     tmode)
@@ -134,7 +129,7 @@ def intent_received(hermes, intent_message):
             return
 
     if intentName == THERMOSTATTURNOFF:
-
+        thermostat.read()
         logger.debug("Thermostat turnOff")
         if intent_message.slots.temperature_device:
             thermostat.setMode(48)  # Turn nightMode on
@@ -144,6 +139,8 @@ def intent_received(hermes, intent_message):
             return
 
     if intentName == THERMOSTATSET:
+        logger.debug("Thermostat Set")
+        thermostat.read()
         if intent_message.slots.temperature_decimal:
             temperature = intent_message.slots.temperature_decimal.first().value
             logger.debug("Température reconnue:".format, (temperature))
@@ -217,10 +214,10 @@ def intent_received(hermes, intent_message):
                         thermostat.getRunModeString(), thermostat.getModeString()))
 
                 else:
-                    sentence="Je n'ai pas compris s'il fait froid ou s'il fait chaud."
+                    sentence = "Je n'ai pas compris s'il fait froid ou s'il fait chaud."
 
             else:
-                sentence="Je ne comprends pas l'action à effectuer avec le thermostat."
+                sentence = "Je ne comprends pas l'action à effectuer avec le thermostat."
 
             logger.debug(sentence)
             hermes.publish_end_session(intent_message.session_id, sentence)
@@ -230,19 +227,19 @@ def intent_received(hermes, intent_message):
 with Hermes(MQTT_ADDR) as h:
 
     try:
-        config=SnipsConfigParser.read_configuration_file(configPath)
+        config = SnipsConfigParser.read_configuration_file(configPath)
 
     except BaseException:
-        config=None
+        config = None
 
-    thermostat=None
+    thermostat = None
 
     try:
-        thermostat=open_thermostat(config)
+        thermostat = open_thermostat(config)
         logger.info('Thermostat initialization: OK')
 
     except Exception as e:
-        zibase=None
+        zibase = None
         logger.error('Error Thermostat {}'.format(e))
 
     h.subscribe_intents(intent_received).start()
