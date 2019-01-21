@@ -6,9 +6,9 @@
 ### Configuration
 All the variables defined within config.ini are found in your own scenario 'thermostat' from your zibase plateform.
 
-the variable "thermostatprobeid" is found by selecting the evs  with pro='TT' when you request the sensors.xml from your local zibase network.
+The variable "thermostatprobeid" is found by selecting the evs  with pro='TT' when you request the sensors.xml from your local zibase network.
 
-http://<your-ip-zibase>/sensors.xml
+http://your-ip-zibase/sensors.xml
 
 my own sensors.xml request provide id=13 for pro='TT' (ThermosTat):
 
