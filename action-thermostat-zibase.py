@@ -120,6 +120,7 @@ def intent_received(hermes, intent_message):
             logger.debug(inv_mode)
             if tmode in inv_mode:
                 thermostat.setMode(inv_mode[tmode])
+                thermostat.update()
 
             else:
                 sentence = 'Désolée mais je ne connais pas le mode {}'.format(
