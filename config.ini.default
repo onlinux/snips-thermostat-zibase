@@ -4,7 +4,7 @@ setpointdayvariable= 29
 setpointnightvariable= 30
 modevariable= 31
 statevariable= 13
-thermostatscenario= 32
+thermostatscenario= 30
 thermostatprobeid = 13
 
 [secret]
