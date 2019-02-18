@@ -169,6 +169,10 @@ class Thermostat:
     def getState(self):
         return self.state
 
+    @property
+    def mode(self):
+        return self.zibase.getVariable(self.modeVariableId)
+            
     def getMode(self):
         return self.zibase.getVariable(self.modeVariableId)
 

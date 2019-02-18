@@ -66,8 +66,8 @@ def open_thermostat(config):
         'statevariable', '13')
     thermostatScenarioId = config.get(
         'global', {
-            "thermostatscenario": "32"}).get(
-        'thermostatscenario', '32')
+            "thermostatscenario": "17"}).get(
+        'thermostatscenario', '17')
     thermostatProbeId = config.get(
         'global', {
             "thermostatprobeid": "13"}).get(

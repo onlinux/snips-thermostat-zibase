@@ -1,5 +1,4 @@
-# -*- coding: latin-1 -*-
-
+#-*- coding: utf-8 -*-
 ################################################################################
 # Librairie Python pour la ZiBase
 # Auteur : Benjamin GAREL
@@ -30,6 +29,7 @@ ch.setFormatter(formatter)
 
 # add ch to logger
 logger.addHandler(ch)
+ 
 class ZbProtocol:
     """ Protocoles compatibles Zibase """
     PRESET = 0
@@ -42,6 +42,18 @@ class ZbProtocol:
     RFS10 = 7
     X2D433 = 8
     X2D868 = 9
+
+    protocol = {
+        "OS": "Oregon",
+        "WS" :"OWL",
+        "VS" :"Visonic",
+        "VR" :"Télécommande Visonic",
+        "XS" : "X10 sécurisé",
+        "X10_0N" : "X10 on",
+        "X10_OFF" : "X10 off",
+        "CS" : "Chacon",
+        "TS" : "Digimax TS10"
+        }
 
 class ZbAction:
     """ Action possible de la zibase """
@@ -71,7 +83,7 @@ def createZbCalendarFromInteger(data):
 
 
 class ZbCalendar(object):
-    """Repr�sente une variable calendrier de la zibase"""
+    """Représente une variable calendrier de la zibase"""
 
     def __init__(self):
         self.hour = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -79,7 +91,7 @@ class ZbCalendar(object):
 
 
     def toInteger(self):
-        """ Retourne l'entier 32bits repr�sentant ce calendrier
+        """ Retourne l'entier 32bits représentant ce calendrier
         """
         data = 0x00000000
         for i in range(24):
@@ -96,7 +108,7 @@ class ZbCalendar(object):
 
 
 class ZbRequest(object):
-    """ Repr�sente une requ�te � la zibase """
+    """ Représente une requête à la zibase """
 
     def __init__(self):
         self.header = bytearray("ZSIG")
@@ -133,10 +145,10 @@ class ZbRequest(object):
 
 
 class ZbResponse(object):
-    """ Repr�sente une r�ponse de la zibase """
+    """ Représente une réponse de la zibase """
 
     def __init__(self, buffer):
-        """ Construction de la r�ponse � partir de la chaine binaire re�ue """
+        """ Construction de la réponse à partir de la chaine binaire reçue """
         self.header = buffer[0:4]
         self.command = struct.unpack("!H", buffer[4:6])[0]
         self.reserved1 = buffer[6:22]
@@ -176,7 +188,7 @@ class ZiBase(object):
 
 
     def sendCommand(self, address, action, protocol = ZbProtocol.PRESET, dimLevel = 0, nbBurst = 1):
-        """ Envoi d'une commande � la zibase """
+        """ Envoi d'une commande à la zibase """
         if len(address) >= 2:
             address = address.upper()
             req = ZbRequest()
@@ -195,9 +207,9 @@ class ZiBase(object):
 
 
     def runScenario(self, numScenario):
-        """ Lance le scenario sp�cifi� par son num�ro.
-            Le num�ro du scenario est indiqu� entre parenth�se
-            dans le suivi d'activit� de la console de configuration.
+        """ Lance le scénario spécifié par son numéro.
+            Le numéro du scenario est indiqué entre parenthèse
+            dans le suivi d'activité de la console de configuration.
         """
         req = ZbRequest()
         req.command = 11
@@ -207,8 +219,8 @@ class ZiBase(object):
 
 
     def getVariable(self, numVar):
-        """ R�cup�re la valeur d'une variable Vx de la Zibase
-            Num�ro de variable compris entre 0 et 19
+        """ Récupère la valeur d'une variable Vx de la Zibase
+            Numéro de variable compris entre 0 et 19
         """
         req = ZbRequest()
         req.command = 11
@@ -223,9 +235,9 @@ class ZiBase(object):
 
 
     def getState(self, address):
-        """ R�cup�re l'�tat d'un actionneur.
-            La zibase ne re�oit que les ordres RF et non les ordre CPL X10,
-            donc l'�tat d'un actionneur X10 connu par la zibase peut �tre erronn�.
+        """ Récupère l'état d'un actionneur.
+            La zibase ne reçoit que les ordres RF et non les ordre CPL X10,
+            donc l'état d'un actionneur X10 connu par la zibase peut être erronné.
         """
         if len(address) > 0:
             address = address.upper()
@@ -247,7 +259,7 @@ class ZiBase(object):
 
 
     def setVariable(self, numVar, value):
-        """ Met � jour une variable zibase avec la valeur sp�cifi�e
+        """ Met à jour une variable zibase avec la valeur spécifiée
             variable comprise entre 0 et 19
         """
         req = ZbRequest()
@@ -258,10 +270,29 @@ class ZiBase(object):
         req.param2 = value & 0xFFFF
         self.sendRequest(req)
 
+    def setVirtualProbe(self, id, value1, value2=0, type=17):
+        """
+        Cette commande permet au système HOST d?envoyer dans ZiBASE une information de sonde virtuelle
+        comme si celle-ci était reçue sur la RF.
+        Probe type:
+            17 : Scientific Oregon Type
+            20 : OWL Type
+        """
+        req = ZbRequest()
+        req.command = 11 # Virtual Probe Event
+        req.param1 = 6
+        req.param2 = id # Sensor ID (e.g; 4196984322
+        req.param4 = type
+        binStr = "{0:b}".format(0).zfill(8)+ "{0:b}".format(value2 & 0xFF).zfill(8) +  "{0:b}".format(value1 & 0xFFFF).zfill(16)
+        req.param3= int(binStr,2)
+        #req.param3 = value1
+        #print binStr, req.param3
+        self.sendRequest(req)
+
 
     def getCalendar(self, numCal):
-        """ R�cup�re la valeur d'un calendrier dynamique de la Zibase
-            Num�ro de calendrier compris entre 1 et 16
+        """ Récupère la valeur d'un calendrier dynamique de la Zibase
+            Numéro de calendrier compris entre 1 et 16
         """
         req = ZbRequest()
         req.command = 11
@@ -276,8 +307,8 @@ class ZiBase(object):
 
 
     def setCalendar(self, numCal, calendar):
-        """ Met � jour le contenu d'un calendrier dynamique de la zibase
-            Num�ro du calendrier compris entre 1 et 16
+        """ Met à jour le contenu d'un calendrier dynamique de la zibase
+            Numéro du calendrier compris entre 1 et 16
         """
         req = ZbRequest()
         req.command = 11
@@ -289,9 +320,9 @@ class ZiBase(object):
 
 
     def execScript(self, script):
-        """ Lance l'ex�cution d'un script
+        """ Lance l'exécution d'un script
             Ex: lm [mon scenario] (= lance le scenarion "mon scenario")
-            Ex: lm 2 aft 3200 (= lance le scenario 2 dans une heure)
+            Ex: lm 2 aft 3600 (= lance le scenario 2 dans une heure)
             Ex : lm [test1].lm [test2] (= lance test1 puis test2)
         """
         if len(script) > 0:
