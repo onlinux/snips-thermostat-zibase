@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 #
 # Author: Eric Vandecasteele (c)2014
@@ -25,11 +25,7 @@ ch.setFormatter(formatter)
 
 # add ch to logger
 logger.addHandler(ch)
-
-
-class Thermostat:
-    'Common base class for thermostat'
-
+class Constants:
     mode = {
         0: 'automatique',
         5: 'stop',
@@ -52,13 +48,15 @@ class Thermostat:
         1: u'marche'
     }
 
+class Thermostat:
+    'Common base class for Thermostat'
     def __init__(self, ip,
                  tempvariableid=28,
                  setpointdayvariableid=29,
                  setpointnightvariableid=30,
                  modevariableid=31,
                  statevariableid=13,
-                 thermostatscenarioid=32,
+                 thermostatscenarioid=17,
                  thermostatprobeid=14):
         """ Indiquer l'adresse IP de la ZiBase """
         self.ip = ip
@@ -116,7 +114,6 @@ class Thermostat:
         self.setpointDayValue = self.getSetpointDay()
         self.setpointNightValue = self.getSetpointNight()
         self.modeValue = self.getMode()
-
         probe = zibase.getSensorInfo('TT', str(self.thermostatProbeId))
         if probe:
             self.runMode = int(probe[2]) & 0x1
@@ -124,18 +121,16 @@ class Thermostat:
             logger.error(' Could not find any Thermostat with id TT {}'.format(
                 self.thermostatProbeId))
             return
-
         v = zibase.getVariable(self.stateVariableId)
         if v >= 0:
             self.state = v & 0x01
         else:
             self.state = 0
-
         elapsed = (time.time() - start) * 1000
         logger.info(' indoorTemp[%d] setpointDay[%d] setpointNight[%d] runMode[%d][%s] state[%d][%s] runMode[%d][%s]' % (
-            self.indoorTemp, self.setpointDayValue, self.setpointNightValue,
-            self.modeValue, Thermostat.mode[self.modeValue], self.state,
-            Thermostat.state[self.state], self.runMode, self.getRunModeString()))
+        self.indoorTemp, self.setpointDayValue, self.setpointNightValue,
+        self.modeValue, Constants.mode[self.modeValue], self.state,
+        Constants.state[self.state], self.runMode, self.getRunModeString()))
         logger.debug(' retrieve data from %s in [%d ms]' % (self.ip, elapsed))
 
     def setVariable(self, variable, value):
@@ -152,19 +147,19 @@ class Thermostat:
                 ' setVariable  [%s]  cannot be > 52!' % (str(variable)))
 
     def setMode(self, mode=0):
-        if mode in Thermostat.mode:
+        if mode in Constants.mode:
             self.modeValue = int(mode)
             self.setVariable(self.modeVariableId, int(mode))
 
             logger.debug(' Send mode %i [%s]  to %s ' % (
-                int(mode), Thermostat.mode[self.modeValue], self.ip))
+                int(mode), Constants.mode[self.modeValue], self.ip))
         else:
             logger.debug(
                 ' Send mode %i  to %s . Error: invalid mode' %
                 (int(mode), self.ip))
 
     def getStateString(self):
-        return Thermostat.state[self.state]
+        return Constants.state[self.state]
 
     def getState(self):
         return self.state
@@ -172,19 +167,19 @@ class Thermostat:
     @property
     def mode(self):
         return self.zibase.getVariable(self.modeVariableId)
-            
+
     def getMode(self):
         return self.zibase.getVariable(self.modeVariableId)
 
     def getModeString(self):
-        return Thermostat.mode[self.getMode()]
+        return Constants.mode[self.getMode()]
 
     def getRunMode(self):
         return (self.runMode)
 
     def getRunModeString(self):
         if self.runMode is not None:
-            return Thermostat.runMode[self.runMode]
+            return Constants.runMode[self.runMode]
         else:
             return None
 

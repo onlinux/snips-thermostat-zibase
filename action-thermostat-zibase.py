@@ -72,7 +72,6 @@ def open_thermostat(config):
         'global', {
             "thermostatprobeid": "13"}).get(
         'thermostatprobeid', '13')
-
     thermostat = Thermostat(
         ip,
         int(tempVariableId),
