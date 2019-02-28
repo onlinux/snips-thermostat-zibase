@@ -1,4 +1,4 @@
-#/usr/bin/env bash -e
+#!/usr/bin/env bash -e
 
 if [ ! -e "./config.ini" ]
 then
