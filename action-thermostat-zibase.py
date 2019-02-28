@@ -10,6 +10,7 @@ import os
 import logging
 import logging.config
 from  thermostat import Thermostat
+from  thermostat import Constants
 from hermes_python.hermes import Hermes
 from snipshelpers.config_parser import SnipsConfigParser
 
@@ -115,7 +116,7 @@ def intent_received(hermes, intent_message):
             sentence = "OK, je passe le thermostat en mode {}".format(tmode)
 
             # Invert Thermostat.mode dict first
-            inv_mode = {value: key for key, value in thermostat.Constants.mode.items()}
+            inv_mode = {value: key for key, value in Constants.mode.items()}
             logger.debug(inv_mode)
             if tmode in inv_mode:
                 thermostat.setMode(inv_mode[tmode])
